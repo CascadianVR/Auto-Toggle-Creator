@@ -1,4 +1,4 @@
-# VRChat Auto Toggle Setup
+# VRChat Auto Toggle Creator
 A untiy editor tool to automatically setup the lengthy process of making animations, setitng up a controller, and filling out the vrchat expression assets.
 
 # How to Use
@@ -10,4 +10,4 @@ A untiy editor tool to automatically setup the lengthy process of making animati
 6. Upload to VRChat and you should have a seperate toggle for each game object you assigned!
 # Current known issues
 - When toggles are created, the VRCExpressionMenu item duplicates if one with the same name already exists.
-- 
+- Random edge cases where error can occure due to names, order or invalid objects.
