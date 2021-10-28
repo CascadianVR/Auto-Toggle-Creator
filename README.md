@@ -9,8 +9,8 @@ A unity editor tool to automatically setup the lengthy process of making animati
 5. When that is done, you can click the "Create Toggles!" button and it will create the animation, layers, parameters and expression items needed.
 6. Upload to VRChat and you should have a seperate toggle for each game object you assigned!
 # Settings
-1. ***Save VRC Parameters:*** If this button is checked, it will tell vrchat to remember the previous parameter value in-game when you switch to the avatar.
-2. ***Start On by Default:*** Check this box if your meshes are enabled (not disabled) by default. IF your object are a mix of both right now you'll have to group them and apply the tool twice - one for off and other for on.
+- ***Save VRC Parameters:*** If this button is checked, it will tell vrchat to remember the previous parameter value in-game when you switch to the avatar.
+- ***Start On by Default:*** Check this box if your meshes are enabled (not disabled) by default. IF your object are a mix of both right now you'll have to group them and apply the tool twice - one for off and other for on.
 # Current known Issues
 - When toggles are created, the VRCExpressionMenu item duplicates if one with the same name already exists.
 - Random edge cases where error can occure due to names, order or invalid objects.
