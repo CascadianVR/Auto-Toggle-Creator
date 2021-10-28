@@ -1,5 +1,5 @@
 # VRChat Auto Toggle Creator
-A untiy editor tool to automatically setup the lengthy process of making animations, setitng up a controller, and filling out the vrchat expression assets.
+A unity editor tool to automatically setup the lengthy process of making animations, setitng up a controller, and filling out the vrchat expression assets.
 
 # How to Use
 1. Open the menu from from Tools/Cascadian/AutoToggleCreator
