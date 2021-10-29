@@ -15,7 +15,7 @@ While this is made with VRChat in mind, that is only the tail end of the script 
 # Current known Issues
 - When toggles are created, the VRCExpressionMenu item duplicates if one with the same name already exists.
 - Random edge cases where error can occure due to names, order or invalid objects.
-- Error sometime when selecting multiple game objects in scene. Does not effect anything but NO CLUE why :/
+- Error sometimes when selecting multiple game objects in scene. Does not effect anything but NO CLUE why :/
 
 # Video Example of Use
 https://user-images.githubusercontent.com/90723146/139313836-1ec916b7-0690-41e6-8618-0a07ccd5f799.mp4
