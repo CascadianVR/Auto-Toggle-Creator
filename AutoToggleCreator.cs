@@ -144,7 +144,7 @@ public class AutoToggleCreator : EditorWindow
             objects.Add(null);
             invert.Add(false);
         }
-        GUILayout.Label("Objects");
+        GUILayout.Label("GameObjects");
         GUILayout.EndHorizontal();
 
         GUIStyle layout = new GUIStyle("window") { margin = new RectOffset(10,10,10,10) };
@@ -189,7 +189,7 @@ public class AutoToggleCreator : EditorWindow
             invert.Add(false);
             mesh.Add(null);
         }
-        GUILayout.Label("Shapekeys");
+        GUILayout.Label("Blendshapes");
         GUILayout.EndHorizontal();
         
         GUIStyle layout = new GUIStyle("window") { margin = new RectOffset(10,10,10,10) };
@@ -279,116 +279,43 @@ public class AutoToggleCreator : EditorWindow
 
     private void CreateClips()
     {
-        if (!seperateToggles)
+
+        AnimationClip toggleClipOn = new AnimationClip(); //Clip for ON
+        
+        float toggleValue = 1;
+        if (defaultOn == true) toggleValue = 0f;
+        else toggleValue = 1f;
+        
+        float toggleShapeValue = 100;
+        if (defaultShapeOn == true) toggleShapeValue = 0f;
+        else toggleShapeValue = 100f;
+
+        toggleClipOn.legacy = false;
+        
+        for (int i = 0; i < toggleObjects.Length; i++)
         {
-            AnimationClip toggleClipOn = new AnimationClip(); //Clip for ON
-            
-            float toggleValue = 1;
-            if (defaultOn == true) toggleValue = 0f;
-            else toggleValue = 1f;
-            
-            float toggleShapeValue = 100;
-            if (defaultShapeOn == true) toggleShapeValue = 0f;
-            else toggleShapeValue = 100f;
-
-            toggleClipOn.legacy = false;
-
-            if (usingObjects)
-            {
-                for (int i = 0; i < toggleObjects.Length; i++)
-                {
-                    toggleClipOn.SetCurve
-                    (GetGameObjectPath(toggleObjects[i].transform).Substring(myAnimator.gameObject.name.Length + 1),
-                        typeof(GameObject),
-                        "m_IsActive",
-                        new AnimationCurve(new Keyframe(0, toggleValue, 0, 0),
-                            new Keyframe(0.016666668f, toggleValue, 0, 0))
-                    );
-                }
-            }
-
-            if (usingShapekeys)
-            {
-                for (int i = 0; i < toggleShapekeys.Length; i++)
-                {
-                    if (toggleShapekeys.Length >= i + 1)
-                    {
-                        toggleClipOn.SetCurve
-                        (GetGameObjectPath(ShapekeyMesh.transform).Substring(myAnimator.gameObject.name.Length + 1),
-                            typeof(SkinnedMeshRenderer),
-                            "blendShape." + toggleShapekeys[i],
-                            new AnimationCurve(new Keyframe(0, toggleShapeValue, 0, 0),
-                                new Keyframe(0.016666668f, toggleShapeValue, 0, 0))
-                        );
-                    }
-                }
-            }
-
-            saveDir = AssetDatabase.GetAssetPath(controller);
-            saveDir = saveDir.Substring(0, saveDir.Length - controller.name.Length - 11);
-
-            //Check to see if path exists. If not, create it.
-            if (!Directory.Exists(saveDir + "ToggleAnimations/"))
-            {
-                Directory.CreateDirectory(saveDir + "ToggleAnimations/");
-            }
-
-            //Save on animation clips (Off should not be needed?)
-            AssetDatabase.CreateAsset(toggleClipOn, saveDir + "ToggleAnimations/" + $"On{toggleObjects[0].name}Group.anim");
-            //AssetDatabase.CreateAsset(toggleClipOff, $"Assets/ToggleAnimations/{myAnimator.gameObject.name}/Off{toggleObjects[i].name}.anim");
-            AssetDatabase.SaveAssets();
+            toggleClipOn.SetCurve
+            (GetGameObjectPath(toggleObjects[i].transform).Substring(myAnimator.gameObject.name.Length + 1),
+                typeof(GameObject),
+                "m_IsActive",
+                new AnimationCurve(new Keyframe(0, toggleValue, 0, 0),
+                    new Keyframe(0.016666668f, toggleValue, 0, 0))
+            );
         }
-        else
+        
+        saveDir = AssetDatabase.GetAssetPath(controller);
+        saveDir = saveDir.Substring(0, saveDir.Length - controller.name.Length - 11);
+
+        //Check to see if path exists. If not, create it.
+        if (!Directory.Exists(saveDir + "ToggleAnimations/"))
         {
-            for (int i = 0; i < toggleObjects.Length; i++)
-            {
-                //Make animation clips for on and off state and set curves for game objects on and off
-                AnimationClip toggleClipOn = new AnimationClip(); //Clip for ON
-
-                float toggleValue = 1;
-                if (defaultOn == true) toggleValue = 0f;
-                else toggleValue = 1f;
-
-                float toggleShapeValue = 100;
-                if (defaultShapeOn == true) toggleShapeValue = 0f;
-                else toggleShapeValue = 100f;
-
-                toggleClipOn.legacy = false;
-                toggleClipOn.SetCurve
-                (GetGameObjectPath(toggleObjects[i].transform).Substring(myAnimator.gameObject.name.Length + 1),
-                    typeof(GameObject),
-                    "m_IsActive",
-                    new AnimationCurve(new Keyframe(0, toggleValue, 0, 0),
-                        new Keyframe(0.016666668f, toggleValue, 0, 0))
-                );
-
-                if (toggleShapekeys.Length >= i + 1)
-                {
-                    toggleClipOn.SetCurve
-                    (GetGameObjectPath(ShapekeyMesh.transform).Substring(myAnimator.gameObject.name.Length + 1),
-                        typeof(SkinnedMeshRenderer),
-                        "blendShape." + toggleShapekeys[i],
-                        new AnimationCurve(new Keyframe(0, toggleShapeValue, 0, 0),
-                            new Keyframe(0.016666668f, toggleShapeValue, 0, 0))
-                    );
-                }
-
-                saveDir = AssetDatabase.GetAssetPath(controller);
-                saveDir = saveDir.Substring(0, saveDir.Length - controller.name.Length - 11);
-
-                //Check to see if path exists. If not, create it.
-                if (!Directory.Exists(saveDir + "ToggleAnimations/"))
-                {
-                    Directory.CreateDirectory(saveDir + "ToggleAnimations/");
-                }
-
-                //Save on animation clips (Off should not be needed?)
-                AssetDatabase.CreateAsset(toggleClipOn, saveDir + "ToggleAnimations/" + $"On{toggleObjects[i].name}.anim");
-                //AssetDatabase.CreateAsset(toggleClipOff, $"Assets/ToggleAnimations/{myAnimator.gameObject.name}/Off{toggleObjects[i].name}.anim");
-                AssetDatabase.SaveAssets();
-
-            }
+            Directory.CreateDirectory(saveDir + "ToggleAnimations/");
         }
+
+        //Save on animation clips (Off should not be needed?)
+        AssetDatabase.CreateAsset(toggleClipOn, saveDir + "ToggleAnimations/" + $"On{toggleObjects[0].name}Group.anim");
+        //AssetDatabase.CreateAsset(toggleClipOff, $"Assets/ToggleAnimations/{myAnimator.gameObject.name}/Off{toggleObjects[i].name}.anim");
+        AssetDatabase.SaveAssets();
     }
 
     private void ApplyToAnimator()
