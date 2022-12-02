@@ -158,7 +158,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                     GUILayout.Width(150f)
                 );
                 invert[i] = EditorGUILayout.ToggleLeft(
-                    "Invert",
+                    new GUIContent("Invert", "Unchecked: Automatically toggles to opposite state (Reccomended)\nChecked: Toggles to current state (Usually not needed)"),
                     invert[i],
                     EditorStyles.boldLabel
                 );
