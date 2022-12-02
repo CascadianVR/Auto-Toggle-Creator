@@ -4,6 +4,7 @@ using System.IO;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
+using UnityEngine.UIElements;
 using VRC.SDK3.Avatars.Components;
 using VRC.SDK3.Avatars.ScriptableObjects;
 
@@ -13,6 +14,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
     {
         public static List<ToggleType> Toggles = new List<ToggleType>();
         public int TogglesCount;
+        public GameObject selectedAvatar;
         public Animator myAnimator;
         AnimatorController controller;
         VRCExpressionParameters vrcParam;
@@ -67,8 +69,10 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             AutoFillSelection();
             EditorGUI.BeginDisabledGroup((myAnimator && controller && vrcParam && vrcMenu) != true); // Disable controls until required assets are assigned
             HorizontalLine(Color.white, 10f);
+            //DragInList();
             GroupList(); // Manages UI and Logic for grouping toggles and assigning propertis for each.
-            HorizontalLine(Color.white, 10f);
+            GUILayout.FlexibleSpace();
+
 
             if (GUILayout.Button("Create Toggles!", GUILayout.Height(40f)))
             {
@@ -82,7 +86,105 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             EditorGUI.EndDisabledGroup();
 
         }
+
+        private void AutoFillSelection()
+        {
+            var style = new GUIStyle()
+            {
+                padding = new RectOffset(10,10,6,6),
+            };
+            
+            var style2 = new GUIStyle()
+            {
+                normal = {background = Texture2D.grayTexture}
+            };
+            
+            var vertStyle = new GUIStyle("window")
+            {
+                normal = { textColor = Color.white}, 
+                //margin = new RectOffset(5,5,5,5),
+                
+                padding = new RectOffset(5,5,5,5),
+            };
+            
+            GUILayout.BeginVertical(style);
+            GUILayout.BeginHorizontal(style);
+            GUILayout.BeginVertical(vertStyle);
+            
+            VRCAvatarDescriptor[] avatars = FindObjectsOfType<VRCAvatarDescriptor>();
+
+            var buttonStyle = new GUIStyle
+            {
+                normal = { textColor = Color.white}, 
+                active = { background = Texture2D.blackTexture, textColor = Color.cyan}, 
+                fontSize = 14,
+                padding = new RectOffset(5,5,5,5),
+            };
+
+            foreach (var avatar in avatars)
+            {
+                if (selectedAvatar != null && (avatar.gameObject.name == selectedAvatar.name))
+                {
+                    buttonStyle.normal.textColor = Color.cyan;
+                    EditorGUILayout.BeginVertical(style2);
+                    if(GUILayout.Button(avatar.name, buttonStyle)) getAvatarInfo(avatar);
+                    EditorGUILayout.EndVertical();
+                }
+                else
+                {
+                    buttonStyle.normal.textColor = Color.white;
+                    if(GUILayout.Button(avatar.name, buttonStyle)) getAvatarInfo(avatar);
+                }
+            }
+            GUILayout.EndVertical();
+            GUILayout.EndHorizontal();
+            GUILayout.EndVertical();
+            
+        }
+
+        private void getAvatarInfo(VRCAvatarDescriptor avatar)
+        {
+            selectedAvatar = avatar.gameObject;
+            Transform SelectedObj = avatar.transform;
+            
+            myAnimator = SelectedObj.GetComponent<Animator>();
+            controller = (AnimatorController)SelectedObj.GetComponent<VRCAvatarDescriptor>().baseAnimationLayers[4].animatorController;
+            vrcParam = SelectedObj.GetComponent<VRCAvatarDescriptor>().expressionParameters;
+            vrcMenu = SelectedObj.GetComponent<VRCAvatarDescriptor>().expressionsMenu;
+            
+            if (myAnimator== null) 
+                Debug.LogWarning("Please make sure you have an Animator Component on your Avatar.");
+            if (vrcMenu== null || vrcParam== null || controller == null) 
+                Debug.LogWarning("Please make sure you have an FX Controller, VRC Parameter and VRC Menu assigned to your Avatar Descriptor.");
+        }
+        
+        private void DragInList()
+        {
+            // Dragging over window
+            if (Event.current.type == EventType.DragUpdated)
+            {
+                DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+                Event.current.Use();
+            }
+            else if (Event.current.type == EventType.DragPerform)
+            {
+                // To consume drag data.
+                DragAndDrop.AcceptDrag();
     
+                // GameObjects from hierarchy.
+                if (DragAndDrop.paths.Length == 0 && DragAndDrop.objectReferences.Length > 0)
+                {
+                    foreach (Object obj in DragAndDrop.objectReferences)
+                    {
+                        Debug.Log("- " + obj);
+                        TogglesCount++;
+                        Toggles.Add(new ToggleType());
+                        Toggles[Toggles.Count - 1].toggleObject.Add((GameObject)obj);
+                    }
+                }
+            }
+        }
+        
         private void GroupList()
         {
             GUIStyle togglelabel = new GUIStyle("label") { fontSize = 18, alignment = TextAnchor.UpperCenter, contentOffset = new Vector2(28,0)};
@@ -237,7 +339,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             return shapekeys.ToArray();
         }
     
-        private void AutoFillSelection()
+        private void AutofFillSelection()
         {
             EditorGUILayout.Space(15);
             if (GUILayout.Button("Auto-Fill with Selected Avatar", GUILayout.Height(30f)))
