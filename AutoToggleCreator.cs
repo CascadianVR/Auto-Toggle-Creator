@@ -21,6 +21,15 @@ namespace CasTools.VRC_Auto_Toggle_Creator
         VRCExpressionsMenu vrcMenu;
         public string saveDir;
         private Vector2 scrollPos;
+        private int animationType;
+        
+        private enum AnimationTypes
+        {
+            toggle,
+            radial
+        }
+
+        private AnimationTypes animTypes;
     
         public class ToggleType
         {
@@ -190,7 +199,8 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             GUIStyle togglelabel = new GUIStyle("label") { fontSize = 18, alignment = TextAnchor.UpperCenter, contentOffset = new Vector2(28,0)};
 
             EditorGUILayout.BeginHorizontal();
-            GUILayout.Label("Toggle Setup", togglelabel);
+            GUILayout.Label("Animation Setup", togglelabel);
+            //animTypes = (AnimationTypes)EditorGUILayout.EnumPopup(GUIContent.none, animTypes) ;
 
             if (GUILayout.Button("-", customButton, GUILayout.Width(25f), GUILayout.Height(25f)))
             {
@@ -209,7 +219,6 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.ExpandHeight(true));
             for (int i = 0; i < TogglesCount; i++)
             {
-            
                 GUIStyle nameStyle = new GUIStyle("textfield") {alignment = TextAnchor.UpperCenter, fontSize = 14};
                 nameStyle.normal.textColor = Color.white;
                 GUIStyle style = new GUIStyle("window") { fontStyle = FontStyle.Bold, margin = new RectOffset(5,5,5,5)};
@@ -229,7 +238,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
 
         void GameObjectList(ref int count, ref List<GameObject> objects, ref List<bool> invert)
         {
-            GUIStyle layout = new GUIStyle("window") { margin = new RectOffset(10,10,10,10) };
+            GUIStyle layout = new GUIStyle("window") { margin = new RectOffset(0,0,5,0) };
             GUILayout.BeginVertical(GUIContent.none, layout,GUILayout.ExpandHeight(true));
             GUILayout.Space(-18);
             GUILayout.BeginHorizontal();
@@ -260,7 +269,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                     GUILayout.Width(150f)
                 );
                 invert[i] = EditorGUILayout.ToggleLeft(
-                    new GUIContent("Invert", "Unchecked: Automatically toggles to opposite state (Reccomended)\nChecked: Toggles to current state (Usually not needed)"),
+                    new GUIContent("Invert", "Unchecked: Automatically toggles to opposite state (Recommended)\nChecked: Toggles to current state (Usually not needed)"),
                     invert[i],
                     EditorStyles.boldLabel
                 );
@@ -271,7 +280,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
 
         void ShapekeyList(ref int count, ref List<SkinnedMeshRenderer> mesh, ref List<int> index, ref List<string> shapekey, ref List<bool> invert)
         {
-            GUIStyle layout = new GUIStyle("window") { margin = new RectOffset(10,10,10,10)};
+            GUIStyle layout = new GUIStyle("window") { margin = new RectOffset(0,0,5,0)};
             GUILayout.BeginVertical(GUIContent.none,layout,GUILayout.ExpandHeight(true));
             GUILayout.Space(-18);
             GUILayout.BeginHorizontal();
