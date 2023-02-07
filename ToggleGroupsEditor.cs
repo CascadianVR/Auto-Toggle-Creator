@@ -1,17 +1,27 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_EDITOR
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using UnityEditor;
 using UnityEngine;
 using VRC.SDK3.Avatars.ScriptableObjects;
 
 namespace CasTools.VRC_Auto_Toggle_Creator
 {
-    public class ToggleGroupsEditor
+    public static class ToggleGroupsEditor
     {
-        private Texture2D plusIcon;
-        private Texture2D minusIcon;
-        private Vector2 scrollPos;
 
-        public void GroupList()
+        private static Texture2D plusIcon;
+        private static Texture2D minusIcon;
+        private static Texture2D buttontex;
+        private static Vector2 scrollPos;
+        public static Texture2D red;
+        public static Texture2D darkred;
+        public static Texture2D green;
+        public static Texture2D darkgreen;
+        
+
+        public static void GroupList()
         {
             plusIcon = AutoToggleCreator.plusIcon;
             minusIcon = AutoToggleCreator.minusIcon;
@@ -58,7 +68,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                 );
                 GUILayout.Space(-12);
                 GUILayout.BeginHorizontal();
-                GUILayout.FlexibleSpace();
+                GUILayout.Space(8);
                 AutoToggleCreator.Toggles[i].toggleName = GUILayout.TextField(
                     AutoToggleCreator.Toggles[i].toggleName,
                     nameStyle, 
@@ -66,31 +76,34 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                     GUILayout.MinWidth(120), 
                     GUILayout.ExpandWidth(false)
                 );
-                GUILayout.FlexibleSpace();
-                GUILayout.EndHorizontal();
-                GUILayout.Space(5);
-                GUILayout.BeginHorizontal();
-                GUILayout.Space(7);
-                GUILayout.FlexibleSpace();
-                EditorGUIUtility.labelWidth = 65;
-                AutoToggleCreator.Toggles[i].expressionMenu = (VRCExpressionsMenu)EditorGUILayout.ObjectField(
-                    new GUIContent("VRC Menu", "Which menu to assign the toggle to. By default uses the main menu"),
-                    AutoToggleCreator.Toggles[i].expressionMenu,
-                    typeof(VRCExpressionsMenu),
-                    true,
-                    GUILayout.Height(20f),
-                    GUILayout.Width(200f)
-                );
-                EditorGUIUtility.labelWidth = 0;
-                GUILayout.FlexibleSpace();
-                AutoToggleCreator.Toggles[i].groupObject = EditorGUILayout.ToggleLeft(
-                    new GUIContent("Group Toggle",
-                        "Every toggle marked with this will be added to the same layer, making the current toggle overwrite the previous toggle form the group."),
-                    AutoToggleCreator.Toggles[i].groupObject,
-                    GUILayout.Width(100f)
-                );
+                
                 GUILayout.FlexibleSpace();
                 
+                EditorGUIUtility.labelWidth = 65;
+                GUILayout.Label("VRC Menu");
+                List<string> names = new List<string>();
+                VRCExpressionsMenu[] menus = GetVRCMenus(AutoToggleCreator.vrcMenu, ref names);
+                AutoToggleCreator.vrcMenuIndex = EditorGUILayout.Popup(AutoToggleCreator.vrcMenuIndex , names.ToArray());
+                AutoToggleCreator.Toggles[i].expressionMenu = menus[AutoToggleCreator.vrcMenuIndex];
+                EditorGUIUtility.labelWidth = 0;
+                
+                GUILayout.FlexibleSpace();
+                
+                GUIStyle toggleGroupButtonStyle = new GUIStyle("button");
+                if (AutoToggleCreator.Toggles[i].groupObject) {
+                    toggleGroupButtonStyle.normal.background = green;
+                    toggleGroupButtonStyle.active.background = darkgreen;
+                }
+                else {
+                    toggleGroupButtonStyle.normal.background = red;
+                    toggleGroupButtonStyle.active.background = darkred;
+                }
+                if (GUILayout.Button("Combine to Group", toggleGroupButtonStyle))
+                {
+                    AutoToggleCreator.Toggles[i].groupObject = !AutoToggleCreator.Toggles[i].groupObject;
+                }
+                GUILayout.Space(8);
+
                 GUILayout.EndHorizontal();
                 GameObjectList(
                     ref AutoToggleCreator.Toggles[i].toggleObjectCount, 
@@ -101,9 +114,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                     ref AutoToggleCreator.Toggles[i].shapekeyNameCount, 
                     ref AutoToggleCreator.Toggles[i].shapekeyMesh, 
                     ref AutoToggleCreator.Toggles[i].shapekeyIndex, 
-                    ref AutoToggleCreator.Toggles[i].shapekeyName, 
-                    ref AutoToggleCreator.Toggles[i].invertShapekey
-                );
+                    ref AutoToggleCreator.Toggles[i].shapekeyName);
                 GUILayout.FlexibleSpace();
                 GUILayout.EndVertical();
                 GUILayout.FlexibleSpace();
@@ -112,7 +123,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             EditorGUILayout.EndScrollView();
         }
 
-        void GameObjectList(ref int count, ref List<GameObject> objects, ref List<bool> invert)
+        static void GameObjectList(ref int count, ref List<GameObject> objects, ref List<bool> invert)
         {
             GUIStyle layout = new GUIStyle("window") { margin = new RectOffset(10, 10, 10, 10) };
             GUILayout.BeginVertical(GUIContent.none, layout, GUILayout.ExpandHeight(true));
@@ -159,7 +170,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             GUILayout.EndVertical();
         }
 
-        void ShapekeyList(ref int count, ref List<SkinnedMeshRenderer> mesh, ref List<int> index, ref List<string> shapekey, ref List<bool> invert)
+        static void ShapekeyList(ref int count, ref List<SkinnedMeshRenderer> mesh, ref List<int> index, ref List<string> shapekey)
         {
             GUIStyle layout = new GUIStyle("window") { margin = new RectOffset(10, 10, 10, 10) };
             GUILayout.BeginVertical(GUIContent.none, layout, GUILayout.ExpandHeight(true));
@@ -171,7 +182,6 @@ namespace CasTools.VRC_Auto_Toggle_Creator
 
                 count--;
                 shapekey.RemoveAt(shapekey.Count - 1);
-                invert.RemoveAt(invert.Count - 1);
                 mesh.RemoveAt(mesh.Count - 1);
                 index.RemoveAt(index.Count - 1);
             }
@@ -180,7 +190,6 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             {
                 count++;
                 shapekey.Add(null);
-                invert.Add(false);
                 mesh.Add(null);
                 index.Add(0);
             }
@@ -202,27 +211,25 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                 {
                     if (mesh[i].sharedMesh.blendShapeCount > 0)
                     {
-                        index[i] = EditorGUILayout.Popup(index[i], GetShapekeys(mesh[i]));
+                        index[i] = EditorGUILayout.Popup(index[i], GetShapekeys(mesh[i]),GUILayout.Width(80));
                         shapekey[i] = mesh[i].sharedMesh.GetBlendShapeName(index[i]);
-                        invert[i] = EditorGUILayout.ToggleLeft(
-                            "Invert",
-                            invert[i],
-                            EditorStyles.boldLabel
-                        );
+                        GUILayout.FlexibleSpace();
+                        GUILayout.Space(20);
+                        var val = EditorGUILayout.Slider(mesh[i].GetBlendShapeWeight(index[i]), 0, 100);
+                        mesh[i].SetBlendShapeWeight(index[i], val);
+                        GUILayout.Space(20);
                     }
                     else
                     {
-                        GUILayout.Label("No blendshapes on mesh!");
+                        GUILayout.Label("No Blendshapes");
                     }
                 }
-
                 GUILayout.EndHorizontal();
             }
-
             GUILayout.EndVertical();
         }
 
-        string[] GetShapekeys(SkinnedMeshRenderer renderer)
+        static string[] GetShapekeys(SkinnedMeshRenderer renderer)
         {
             List<string> shapekeys = new List<string>();
 
@@ -233,5 +240,33 @@ namespace CasTools.VRC_Auto_Toggle_Creator
 
             return shapekeys.ToArray();
         }
+
+        static public VRCExpressionsMenu[] GetVRCMenus(VRCExpressionsMenu mainMenu, ref List<string> names)
+        {
+            List<VRCExpressionsMenu> menus = new List<VRCExpressionsMenu>();
+            menus.Add(mainMenu);
+
+            CheckMenu(mainMenu, ref menus);
+
+            foreach (var menu in menus)
+            {
+                names.Add(menu.name);
+            }
+            
+            return menus.ToArray();
+        }
+
+        static void CheckMenu(VRCExpressionsMenu currentMenu, ref List<VRCExpressionsMenu> menus)
+        {
+            for (int i = 0; i < currentMenu.controls.Count; i++)
+            {
+                if (currentMenu.controls[i].type == VRCExpressionsMenu.Control.ControlType.SubMenu)
+                {
+                    menus.Add(currentMenu.controls[i].subMenu);
+                    CheckMenu(currentMenu.controls[i].subMenu, ref menus);
+                }
+            }
+        }
     }
 }
+#endif
