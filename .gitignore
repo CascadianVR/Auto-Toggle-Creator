@@ -1,1 +1,9 @@
 *.meta
+VRCExpressionsMenu 1.asset
+VRCExpressionParameters 1.asset
+ToggleAnimations/OnSuit.anim
+ToggleAnimations/OnBody2.anim
+ToggleAnimations/OnBody.anim
+ToggleAnimations/OffSuit.anim
+ToggleAnimations/OffBody2.anim
+ToggleAnimations/OffBody.anim
