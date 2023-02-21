@@ -82,7 +82,9 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                 EditorGUIUtility.labelWidth = 65;
                 GUILayout.Label("VRC Menu");
                 List<string> names = new List<string>();
-                VRCExpressionsMenu[] menus = GetVRCMenus(AutoToggleCreator.vrcMenu, ref names);
+                VRCExpressionsMenu[] menus = new VRCExpressionsMenu[0];
+                if (AutoToggleCreator.vrcMenu != null)
+                    menus = GetVRCMenus(AutoToggleCreator.vrcMenu, ref names);
                 AutoToggleCreator.vrcMenuIndex = EditorGUILayout.Popup(AutoToggleCreator.vrcMenuIndex , names.ToArray());
                 AutoToggleCreator.Toggles[i].expressionMenu = menus[AutoToggleCreator.vrcMenuIndex];
                 EditorGUIUtility.labelWidth = 0;

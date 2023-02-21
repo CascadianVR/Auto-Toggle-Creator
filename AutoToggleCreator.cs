@@ -17,14 +17,15 @@ namespace CasTools.VRC_Auto_Toggle_Creator
         public static List<ToggleType> Toggles = new List<ToggleType>();
         public static int vrcMenuIndex;
         public static Animator myAnimator;
-        private static AnimatorController controller;
-        private static VRCExpressionParameters vrcParam;
         public static VRCExpressionsMenu vrcMenu;
         public string saveDir;
+        public static AnimatorController controller;
+        public static VRCExpressionParameters vrcParam;
         
-        private Vector2 scrollPos2;
+        private Vector2 scrollPos;
         private GameObject selectedAvatar = null;
         
+        // Defines properties of each toggle. Each are added to a list where the user changes the properties before thye're applied.
         public class ToggleType
         {
             public string toggleName;
@@ -39,9 +40,8 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             public List<SkinnedMeshRenderer> shapekeyMesh;
             public List<int> shapekeyIndex;
             public List<string> shapekeyName;
-            public List<float> shapekeyValue;
             
-            public ToggleType()
+            public ToggleType() // Assign default values for when created.
             {
                 toggleName = "Toggle Name";
                 expressionMenu = vrcMenu;
@@ -52,7 +52,6 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                 groupObject = false;
 
                 shapekeyName = new List<string>();
-                shapekeyValue = new List<float>();
                 shapekeyMesh = new List<SkinnedMeshRenderer>();
                 shapekeyIndex = new List<int>();
                 shapekeyNameCount = 0;
@@ -66,38 +65,56 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             AutoToggleCreator window = (AutoToggleCreator)EditorWindow.GetWindow(typeof(AutoToggleCreator));
             window.Show();
             window.minSize = new Vector2(450, 650);
+            
+            // Make sure no data is brought over when a new window is created
             Toggles = new List<ToggleType>();
             myAnimator = null;
             controller = null;
             vrcParam = null;
             vrcMenu = null;
+            
+            // Default UI Setup for new window
+            UISetup();
         }
 
         private void OnGUI()
         {
-            UISetup();
-
+            // Creates list of all valid models in the scene for user to choose from.
             AutoFillSelection();
-            EditorGUI.BeginDisabledGroup((myAnimator && controller && vrcParam && vrcMenu) != true); // Disable controls until required assets are assigned
+            
+            // Disable controls until required assets are assigned
+            if (selectedAvatar != null)
+                getAvatarInfo(selectedAvatar.GetComponent<VRCAvatarDescriptor>());
+            EditorGUI.BeginDisabledGroup((myAnimator && controller && vrcParam && vrcMenu) != true);
 
             HorizontalLine(Color.white, 5);
 
-            ToggleGroupsEditor.GroupList(); // Manages UI and Logic for grouping toggles and assigning propertis for each.
+            // Manages UI and Logic for grouping toggles and assigning propertis for each.
+            ToggleGroupsEditor.GroupList();
 
             HorizontalLine(Color.white, 10f);
+            EditorGUI.EndDisabledGroup();
 
-            scrollPos2 = EditorGUILayout.BeginScrollView(scrollPos2 ,  GUILayout.ExpandHeight(true), GUILayout.MinHeight(80));
-            bool errorPass = debugMenu.CheckErrors();
+            scrollPos = EditorGUILayout.BeginScrollView(scrollPos ,  GUILayout.ExpandHeight(true), GUILayout.MinHeight(80));
+            
+            // Checks for any errors the user must address and displays them before continuing with toggle creation.
+            bool errorPass = false;
+            if (selectedAvatar != null)
+            {
+                errorPass = debugMenu.CheckErrors();
+            }
+
             EditorGUILayout.EndScrollView();
 
             HorizontalLine(Color.white, 10f);
-            
-            EditorGUI.BeginDisabledGroup(!errorPass); // Disable controls until required assets are assigned
+
+            EditorGUI.BeginDisabledGroup((myAnimator && controller && vrcParam && vrcMenu) != true);
+            EditorGUI.BeginDisabledGroup(!errorPass); // Disable create button until all errors are addressed
             
             if (GUILayout.Button("Create Toggles!", GUILayout.Height(40f)))
             {
                 CreateClips(); // Creates the Animation Clips needed for toggles.
-                ApplyToAnimator(); // Handles making toggle bool property, layer setup, states and transitions.
+                ApplyToAnimator(); // Handles making properties, layers, states and transitions.
                 MakeVRCParameter(); // Makes a new VRCParameter list, populates it with existing parameters, then adds new ones for each toggle.
                 MakeVRCMenu(); // Adds the new toggles to the selected VRCMenu with appropriate settings
                 Postprocessing(); // Makes sure to save all the newly created and modified assets
@@ -110,6 +127,10 @@ namespace CasTools.VRC_Auto_Toggle_Creator
 
         private void AutoFillSelection()
         {
+            controller = null;
+            vrcParam = null;
+            vrcMenu = null;
+            
             var style = new GUIStyle()
             {
                 padding = new RectOffset(10,10,6,6),
@@ -153,16 +174,15 @@ namespace CasTools.VRC_Auto_Toggle_Creator
         {
             selectedAvatar = avatar.gameObject;
             Transform SelectedObj = avatar.transform;
-            
+
+            if (SelectedObj.GetComponent<VRCAvatarDescriptor>().baseAnimationLayers[4].animatorController != null)
+            {
+                controller = (AnimatorController)SelectedObj.GetComponent<VRCAvatarDescriptor>().baseAnimationLayers[4].animatorController;
+            }
+
             myAnimator = SelectedObj.GetComponent<Animator>();
-            controller = (AnimatorController)SelectedObj.GetComponent<VRCAvatarDescriptor>().baseAnimationLayers[4].animatorController;
             vrcParam = SelectedObj.GetComponent<VRCAvatarDescriptor>().expressionParameters;
             vrcMenu = SelectedObj.GetComponent<VRCAvatarDescriptor>().expressionsMenu;
-            
-            if (myAnimator== null) 
-                Debug.LogWarning("Please make sure you have an Animator Component on your Avatar.");
-            if (vrcMenu== null || vrcParam== null || controller == null) 
-                Debug.LogWarning("Please make sure you have an FX Controller, VRC Parameter and VRC Menu assigned to your Avatar Descriptor.");
         }
 
         private void CreateClips()
@@ -198,6 +218,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                 for (int i = 0; i < toggle.shapekeyName.Count; i++) // For each shapekey add 
                 {
                     float toggleShapeValue = toggle.shapekeyMesh[i].GetBlendShapeWeight(toggle.shapekeyMesh[i].sharedMesh.GetBlendShapeIndex(toggle.shapekeyName[i]));
+                    toggleShapeValue = 100f - toggleShapeValue;
                     
                     toggleClipOn.SetCurve(
                         GetGameObjectPath(toggle.shapekeyMesh[i].transform).Substring(GetGameObjectPath(myAnimator.transform).Length + 1),
@@ -246,76 +267,41 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                         controller.AddParameter("GroupToggle", AnimatorControllerParameterType.Int);
                     }
 
-                    //Check if a layer already Exists with that name. If so, remove and add new one.
-                    bool existLayer = doesNameExistLayer("GroupToggle", controller.layers);
+                    int index;
+                    bool existLayer = doesNameExistLayer("GroupToggle", controller.layers, out index);
                     if (existLayer)
                     {
-                        controller.RemoveLayer(controller.layers.Length - 1);
+                        controller.RemoveLayer(index);
                     }
 
                     controller.AddLayer("GroupToggle");
 
-                    //Creating On and Off states
-                    AnimatorState stateOn = new AnimatorState
-                    {
-                        name = "ON",
-                        motion = (Motion)AssetDatabase.LoadAssetAtPath(saveDir + "ToggleAnimations" + $"/On{toggle.toggleName}.anim", typeof(Motion)),
-                        writeDefaultValues = false
-                    };
-                    AnimatorState stateOff = new AnimatorState
-                    {
-                        name = "OFF",
-                        motion = (Motion)AssetDatabase.LoadAssetAtPath(saveDir + "ToggleAnimations" + $"/Off{toggle.toggleName}.anim", typeof(Motion)),
-                        writeDefaultValues = false
-                    };
+                    //Creating Idle, On, and Off states
+                    AnimatorController animatorController = controller;
+                    var sm = animatorController.layers[controller.layers.Length - 1].stateMachine;
+                    
+                    sm.AddState("stateIdle", new Vector3(300, 0, 0));
+                    sm.AddState("stateOn", new Vector3(300, -220, 0));
+                    sm.AddState("stateOff", new Vector3(100, -110, 0));
 
-                    AnimatorState stateIdle = new AnimatorState
-                    {
-                        name = "Idle",
-                        motion = (Motion)AssetDatabase.LoadAssetAtPath(Application.dataPath + "/CasTools/VRC-Auto-Toggle-Creator/IDLE.anim", typeof(Motion)),
-                        writeDefaultValues = true
-                    };
+                    sm.states[0].state.name = "IDLE" + toggle.toggleName;
+                    sm.states[0].state.motion = (Motion)AssetDatabase.LoadAssetAtPath(Application.dataPath + "/CasTools/VRC-Auto-Toggle-Creator/IDLE.anim", typeof(Motion));
+                    sm.states[0].state.writeDefaultValues = true;
+            
+                    sm.states[1].state.name = "ON" + toggle.toggleName;
+                    sm.states[1].state.motion = (Motion)AssetDatabase.LoadAssetAtPath(saveDir + "ToggleAnimations" + $"/On{toggle.toggleName}.anim", typeof(Motion));
+                    sm.states[1].state.writeDefaultValues = false;
+            
+                    sm.states[2].state.name = "OFF" + toggle.toggleName;
+                    sm.states[2].state.motion = (Motion)AssetDatabase.LoadAssetAtPath(saveDir + "ToggleAnimations" + $"/Off{toggle.toggleName}.anim", typeof(Motion));
+                    sm.states[2].state.writeDefaultValues = false;
 
-                    ChildAnimatorState[] stateCheck = controller.layers[controller.layers.Length - 1].stateMachine.states;
-                    foreach (var t in stateCheck)
-                    {
-                        if (t.state.name == "Idle")
-                        {
-                            controller.layers[controller.layers.Length - 1].stateMachine.AddState(t.state, new Vector3(300, 0, 0));
-                            break;
-                        }
-
-                        controller.layers[controller.layers.Length - 1].stateMachine.AddState(stateIdle, new Vector3(300, 0, 0));
-                        break;
-                    }
-
-                    // Adding created states to controller layer
-                    controller.layers[controller.layers.Length - 1].stateMachine.AddState(stateOff, new Vector3(100, -110, 0));
-                    controller.layers[controller.layers.Length - 1].stateMachine.AddState(stateOn, new Vector3(300, -220, 0));
-
-                    // If True, go to ON state.
-                    controller.layers[controller.layers.Length - 1].stateMachine.states[2].state.AddTransition(
-                        controller.layers[controller.layers.Length - 1].stateMachine.states[1].state);
-                    controller.layers[controller.layers.Length - 1].stateMachine.states[2].state.transitions[0].AddCondition(AnimatorConditionMode.IfNot, 0,
-                        toggle.toggleName + "Toggle");
-                    controller.layers[controller.layers.Length - 1].stateMachine.states[2].state.transitions[0].duration = 0.1f;
-
-                    // If False, go to Off state.
-                    controller.layers[controller.layers.Length - 1].stateMachine.states[0].state.AddTransition(
-                        controller.layers[controller.layers.Length - 1].stateMachine.states[2].state);
-                    controller.layers[controller.layers.Length - 1].stateMachine.states[0].state.transitions[0].AddCondition(AnimatorConditionMode.If, 0,
-                        toggle.toggleName + "Toggle");
-                    controller.layers[controller.layers.Length - 1].stateMachine.states[0].state.transitions[0].duration = 0.1f;
-
-                    // Go to Idle after Off state immediately.
-                    controller.layers[controller.layers.Length - 1].stateMachine.states[1].state.AddTransition(
-                        controller.layers[controller.layers.Length - 1].stateMachine.states[0].state);
-                    controller.layers[controller.layers.Length - 1].stateMachine.states[1].state.transitions[0].duration = 0.1f;
-                    controller.layers[controller.layers.Length - 1].stateMachine.states[1].state.transitions[0].hasExitTime = true;
-
-                    AssetDatabase.AddObjectToAsset(stateOn, AssetDatabase.GetAssetPath(controller));
-                    AssetDatabase.AddObjectToAsset(stateOff, AssetDatabase.GetAssetPath(controller));
-                    AssetDatabase.AddObjectToAsset(stateIdle, AssetDatabase.GetAssetPath(controller));
+                    sm.states[0].state.AddTransition(sm.states[1].state);
+                    sm.states[0].state.transitions[0].AddCondition(AnimatorConditionMode.If, 0, toggle.toggleName + "Toggle");
+                    sm.states[1].state.AddTransition(sm.states[2].state);
+                    sm.states[1].state.transitions[0].AddCondition(AnimatorConditionMode.IfNot, 0, toggle.toggleName + "Toggle");
+                    sm.states[2].state.AddTransition(sm.states[0].state);
+                    sm.states[2].state.transitions[0].hasExitTime = true;
 
                     //Set Layer Weight
                     AnimatorControllerLayer[] layers = controller.layers;
@@ -332,76 +318,52 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                     }
 
                     //Check if a layer already Exists with that name. If so, remove and add new one.
-                    bool existLayer = doesNameExistLayer(toggle.toggleName, controller.layers);
+                    int index;
+                    bool existLayer = doesNameExistLayer(toggle.toggleName, controller.layers, out index);
                     if (existLayer)
                     {
-                        controller.RemoveLayer(controller.layers.Length - 1);
+                        controller.RemoveLayer(index);
                     }
 
                     controller.AddLayer(toggle.toggleName);
 
-                    //Creating On and Off states
-                    AnimatorState stateOn = new AnimatorState
-                    {
-                        name = "ON",
-                        motion = (Motion)AssetDatabase.LoadAssetAtPath(saveDir + "ToggleAnimations" + $"/On{toggle.toggleName}.anim", typeof(Motion)),
-                        writeDefaultValues = false
-                    };
-                    AnimatorState stateOff = new AnimatorState
-                    {
-                        name = "OFF",
-                        motion = (Motion)AssetDatabase.LoadAssetAtPath(saveDir + "ToggleAnimations" + $"/Off{toggle.toggleName}.anim", typeof(Motion)),
-                        writeDefaultValues = false
-                    };
-                    AnimatorState stateIdle = new AnimatorState
-                    {
-                        name = "Idle",
-                        motion = null,
-                        writeDefaultValues = false
-                    };
+                    //Creating Idle, On, and Off states
+                    AnimatorController animatorController = controller;
+                    var sm = animatorController.layers[controller.layers.Length - 1].stateMachine;
 
-                    // Adding created states to controller layer
-                    controller.layers[controller.layers.Length - 1].stateMachine.AddState(stateIdle, new Vector3(300, 0, 0));
-                    controller.layers[controller.layers.Length - 1].stateMachine.AddState(stateOff, new Vector3(100, -110, 0));
-                    controller.layers[controller.layers.Length - 1].stateMachine.AddState(stateOn, new Vector3(300, -220, 0));
+                    sm.AddState("stateIdle", new Vector3(300, 0, 0));
+                    sm.AddState("stateOn", new Vector3(300, -220, 0));
+                    sm.AddState("stateOff", new Vector3(100, -110, 0));
 
-                    // If True, go to ON state.
-                    controller.layers[controller.layers.Length - 1].stateMachine.states[2].state.AddTransition(
-                        controller.layers[controller.layers.Length - 1].stateMachine.states[1].state);
-                    controller.layers[controller.layers.Length - 1].stateMachine.states[2].state.transitions[0].AddCondition(AnimatorConditionMode.IfNot, 0,
-                        toggle.toggleName + "Toggle");
-                    controller.layers[controller.layers.Length - 1].stateMachine.states[2].state.transitions[0].duration = 0.1f;
+                    sm.states[0].state.name = "IDLE" + toggle.toggleName;
+                    sm.states[0].state.motion = (Motion)AssetDatabase.LoadAssetAtPath("Assets/CasTools/VRC-Auto-Toggle-Creator/IDLE.anim", typeof(Motion));
+                    sm.states[0].state.writeDefaultValues = false;
+            
+                    sm.states[1].state.name = "ON" + toggle.toggleName;
+                    sm.states[1].state.motion = (Motion)AssetDatabase.LoadAssetAtPath(saveDir + "ToggleAnimations" + $"/On{toggle.toggleName}.anim", typeof(Motion));
+                    sm.states[1].state.writeDefaultValues = false;
+            
+                    sm.states[2].state.name = "OFF" + toggle.toggleName;
+                    sm.states[2].state.motion = (Motion)AssetDatabase.LoadAssetAtPath(saveDir + "ToggleAnimations" + $"/Off{toggle.toggleName}.anim", typeof(Motion));
+                    sm.states[2].state.writeDefaultValues = false;
 
-                    // If False, go to Off state.
-                    controller.layers[controller.layers.Length - 1].stateMachine.states[0].state.AddTransition(
-                        controller.layers[controller.layers.Length - 1].stateMachine.states[2].state);
-                    controller.layers[controller.layers.Length - 1].stateMachine.states[0].state.transitions[0].AddCondition(AnimatorConditionMode.If, 0,
-                        toggle.toggleName + "Toggle");
-                    controller.layers[controller.layers.Length - 1].stateMachine.states[0].state.transitions[0].duration = 0.1f;
-
-                    // Go to Idle after Off state immediately.
-                    controller.layers[controller.layers.Length - 1].stateMachine.states[1].state.AddTransition(
-                        controller.layers[controller.layers.Length - 1].stateMachine.states[0].state);
-                    controller.layers[controller.layers.Length - 1].stateMachine.states[1].state.transitions[0].duration = 0.1f;
-                    controller.layers[controller.layers.Length - 1].stateMachine.states[1].state.transitions[0].hasExitTime = true;
+                    sm.states[0].state.AddTransition(sm.states[1].state);
+                    sm.states[0].state.transitions[0].AddCondition(AnimatorConditionMode.If, 0, toggle.toggleName + "Toggle");
+                    sm.states[0].state.transitions[0].hasExitTime = false;
+                    sm.states[0].state.transitions[0].duration = 0.01f;
+                    sm.states[1].state.AddTransition(sm.states[2].state);
+                    sm.states[1].state.transitions[0].AddCondition(AnimatorConditionMode.IfNot, 0, toggle.toggleName + "Toggle");
+                    sm.states[1].state.transitions[0].hasExitTime = false;
+                    sm.states[1].state.transitions[0].duration = 0.01f;
+                    sm.states[2].state.AddTransition(sm.states[0].state);
+                    sm.states[2].state.transitions[0].hasExitTime = true;
+                    sm.states[2].state.transitions[0].exitTime = 0f;
+                    sm.states[2].state.transitions[0].duration = 0.01f;
 
                     //Set Layer Weight
                     AnimatorControllerLayer[] layers = controller.layers;
                     layers[controller.layers.Length - 1].defaultWeight = 1;
                     controller.layers = layers;
-                    
-                    
-                    EditorUtility.SetDirty(stateOn);
-                    EditorUtility.SetDirty(stateOff);
-                    EditorUtility.SetDirty(stateIdle);
-                    EditorUtility.SetDirty(controller);
-
-                    AssetDatabase.AddObjectToAsset(stateOn, AssetDatabase.GetAssetPath(controller));
-                    AssetDatabase.AddObjectToAsset(stateOff, AssetDatabase.GetAssetPath(controller));
-                    AssetDatabase.AddObjectToAsset(stateIdle, AssetDatabase.GetAssetPath(controller));
-                    
-                    AssetDatabase.Refresh();
-                    AssetDatabase.SaveAssets();
                 }
             }
 
@@ -410,53 +372,40 @@ namespace CasTools.VRC_Auto_Toggle_Creator
 
         private void MakeVRCParameter()
         {
-            VRCExpressionParameters.Parameter[] newList = new VRCExpressionParameters.Parameter[vrcParam.parameters.Length + Toggles.Count];
-            int k = 0;
-            foreach (var toggle in Toggles)
+            List<VRCExpressionParameters.Parameter> newList = new List<VRCExpressionParameters.Parameter>();
+
+            foreach (var param in vrcParam.parameters)
             {
-                //Add parameters that were already on the SO
-                for (int i = 0; i < vrcParam.parameters.Length; i++)
-                {
-                    newList[i] = vrcParam.parameters[i];
-                }
-
-                bool same = false;
-
-                //Make new parameter to add to list
-                VRCExpressionParameters.Parameter newParam = new VRCExpressionParameters.Parameter();
-
-                int vrcParamLength = vrcParam.parameters.Length;
-
-                //Modify parameter according to user settings and object name
-                newParam.name = toggle.toggleName + "Toggle";
-                newParam.valueType = VRCExpressionParameters.ValueType.Bool;
-                newParam.defaultValue = 0;
-
-                //This garbage here checks to see if there is already a parameter with the same name. If so, It ignore it and removes one slip from the predetermined list.
-                for (int j = 0; j < vrcParamLength; j++)
-                {
-                    if (newList[j].name == toggle.toggleName + "Toggle")
-                    {
-                        same = true;
-                    }
-                }
-
-                //If no name name was found, then add parameter to list
-                if (!same)
-                {
-                    newList[vrcParam.parameters.Length + k] = newParam;
-                }
-
-                k++;
+                newList.Add(param);
             }
 
-            //Apply new list to VRCExpressionParameter asset
-            vrcParam.parameters = newList;
-        }
+            foreach (var toggle in Toggles)
+            {
+                for (int i = 0; i < newList.Count; i++)
+                {
+                    if (newList[i].name == toggle.toggleName + "Toggle")
+                    {
+                        newList.RemoveAt(i);
+                    }
+                }
+                
+                //Make new parameter and add to list
+                VRCExpressionParameters.Parameter newParam = new VRCExpressionParameters.Parameter
+                {
+                    name = toggle.toggleName + "Toggle",
+                    valueType = VRCExpressionParameters.ValueType.Bool,
+                    defaultValue = 0
+                };
+                newList.Add(newParam);
+            }
+            
 
+            //Apply new list to VRCExpressionParameter asset
+            vrcParam.parameters = newList.ToArray();
+        }
+        
         private void MakeVRCMenu()
         {
-
             foreach (var toggle in Toggles)
             {
                 VRCExpressionsMenu.Control controlItem = new VRCExpressionsMenu.Control
@@ -502,16 +451,17 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             return false;
         }
 
-        private bool doesNameExistLayer(string layerName, AnimatorControllerLayer[] array)
+        private bool doesNameExistLayer(string layerName, AnimatorControllerLayer[] array, out int index)
         {
             for (int i = 0; i < array.Length; i++)
             {
                 if (array[i].name == layerName)
                 {
+                    index = i;
                     return true;
                 }
             }
-
+            index = 0;
             return false;
         }
 
@@ -533,24 +483,13 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             ToggleGroupsEditor.darkgreen = Helpers.CreateColorTexture2D(new Color(0, 0.3f, 0));
             ToggleGroupsEditor.red = Helpers.CreateColorTexture2D(new Color(0.5f, 0, 0));
             ToggleGroupsEditor.darkred = Helpers.CreateColorTexture2D(new Color(0.3f, 0, 0));
-            AssemblyReloadEvents.afterAssemblyReload += OnAfterAssemblyReload;
         }
 
-        private void OnDisable()
-        {
-            AssemblyReloadEvents.afterAssemblyReload -= OnAfterAssemblyReload;
-        }
-
-        private void OnAfterAssemblyReload()
-        {
-            Debug.Log("After Assembly Reload");
-        }
-
-        private GUIStyle horizontalLine;
+        private static GUIStyle horizontalLine;
         public static Texture2D plusIcon;
         public static Texture2D minusIcon;
 
-        private void UISetup()
+        private static void UISetup()
         {
             horizontalLine = new GUIStyle()
             {
