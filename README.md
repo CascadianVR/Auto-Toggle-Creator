@@ -6,7 +6,7 @@ While this is made with VRChat in mind, that is only the tail end of the script 
 https://github.com/CascadianWorks/VRC-Auto-Toggle-Creator/releases
 
 # How to Use
-1. Download ***AutoToggleCreator.cs*** from the download page linked above.
+1. Download the Unity package from the releases page (link above) from the download page linked above.
 2. Drag the script anywhere into your asset folder in unity and open the menu from the top Tools/Cascadian/AutoToggleCreator
 4. Make sure your avatar has the VRC_Descriptor and has the FXAniamtionController, VRCExpressionsMenu and VRCExpressionParameters assets attached then click the auto fill button at the top. (Or drag in the four fields manually).
 5. Next, drag in your game objects you would like to make a toggle for.
