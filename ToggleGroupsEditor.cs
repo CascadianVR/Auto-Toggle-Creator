@@ -85,8 +85,8 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                 VRCExpressionsMenu[] menus = new VRCExpressionsMenu[0];
                 if (AutoToggleCreator.vrcMenu != null)
                     menus = GetVRCMenus(AutoToggleCreator.vrcMenu, ref names);
-                AutoToggleCreator.vrcMenuIndex = EditorGUILayout.Popup(AutoToggleCreator.vrcMenuIndex , names.ToArray());
-                AutoToggleCreator.Toggles[i].expressionMenu = menus[AutoToggleCreator.vrcMenuIndex];
+                AutoToggleCreator.Toggles[i].vrcMenuIndex = EditorGUILayout.Popup(AutoToggleCreator.Toggles[i].vrcMenuIndex , names.ToArray());
+                AutoToggleCreator.Toggles[i].expressionMenu = menus[AutoToggleCreator.Toggles[i].vrcMenuIndex];
                 EditorGUIUtility.labelWidth = 0;
                 
                 GUILayout.FlexibleSpace();
@@ -100,10 +100,10 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                     toggleGroupButtonStyle.normal.background = red;
                     toggleGroupButtonStyle.active.background = darkred;
                 }
-                if (GUILayout.Button("Combine to Group", toggleGroupButtonStyle))
-                {
-                    AutoToggleCreator.Toggles[i].groupObject = !AutoToggleCreator.Toggles[i].groupObject;
-                }
+                // if (GUILayout.Button("Combine to Group", toggleGroupButtonStyle))
+                // {
+                //     AutoToggleCreator.Toggles[i].groupObject = !AutoToggleCreator.Toggles[i].groupObject;
+                // }
                 GUILayout.Space(8);
 
                 GUILayout.EndHorizontal();

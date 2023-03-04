@@ -15,7 +15,6 @@ namespace CasTools.VRC_Auto_Toggle_Creator
         private readonly DebugMenu debugMenu = new DebugMenu();
 
         public static List<ToggleType> Toggles = new List<ToggleType>();
-        public static int vrcMenuIndex;
         public static Animator myAnimator;
         public static VRCExpressionsMenu vrcMenu;
         public string saveDir;
@@ -23,13 +22,14 @@ namespace CasTools.VRC_Auto_Toggle_Creator
         public static VRCExpressionParameters vrcParam;
         
         private Vector2 scrollPos;
-        private GameObject selectedAvatar = null;
+        private static GameObject selectedAvatar = null;
         
         // Defines properties of each toggle. Each are added to a list where the user changes the properties before thye're applied.
         public class ToggleType
         {
             public string toggleName;
             public VRCExpressionsMenu expressionMenu;
+            public int vrcMenuIndex;
 
             public int toggleObjectCount;
             public List<GameObject> toggleObject;
@@ -45,6 +45,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             {
                 toggleName = "Toggle Name";
                 expressionMenu = vrcMenu;
+                vrcMenuIndex = 0;
 
                 toggleObject = new List<GameObject>();
                 toggleObjectCount = 0;
@@ -72,6 +73,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             controller = null;
             vrcParam = null;
             vrcMenu = null;
+            selectedAvatar = null;
             
             // Default UI Setup for new window
             UISetup();
@@ -115,6 +117,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             {
                 CreateClips(); // Creates the Animation Clips needed for toggles.
                 ApplyToAnimator(); // Handles making properties, layers, states and transitions.
+                //ApplyToAnimatorBLEND(); // Handles making properties, layers, states and transitions.
                 MakeVRCParameter(); // Makes a new VRCParameter list, populates it with existing parameters, then adds new ones for each toggle.
                 MakeVRCMenu(); // Adds the new toggles to the selected VRCMenu with appropriate settings
                 Postprocessing(); // Makes sure to save all the newly created and modified assets
@@ -370,6 +373,84 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             AssetDatabase.SaveAssets();
         }
 
+        private void ApplyToAnimatorBLEND()
+        {
+
+            //Check if a layer already Exists with that name. If so, remove and add new one.
+            int index;
+            bool existLayer = doesNameExistLayer(Toggles[0].toggleName, controller.layers, out index);
+            if (existLayer)
+            {
+                controller.RemoveLayer(index);
+            }
+
+            controller.AddParameter("Weight", AnimatorControllerParameterType.Float);
+
+            controller.AddLayer("BlendToggles");
+            
+            AnimatorController animatorController = controller;
+            var sm = animatorController.layers[animatorController.layers.Length - 1].stateMachine;
+            
+            BlendTree MainBlendtree = new BlendTree();
+            MainBlendtree.name = "BlendTreeToggle";
+            MainBlendtree.hideFlags = HideFlags.HideInHierarchy;
+            MainBlendtree.blendType = BlendTreeType.Direct;
+            MainBlendtree.blendParameter = "Weight";
+            MainBlendtree.blendParameterY = "Weight";
+            
+            animatorController.parameters[animatorController.parameters.Length - 1].defaultBool = true;
+            animatorController.parameters[animatorController.parameters.Length - 1].defaultFloat = 1.0f;
+            animatorController.parameters[animatorController.parameters.Length - 1].defaultInt = 1;
+            Debug.Log(animatorController.parameters[animatorController.parameters.Length - 1].name);
+            
+            
+            foreach (var toggle in Toggles)
+            {
+
+                // Check if the parameter or layer already exists. If not, add parameter
+                bool existParam = doesNameExistParam(toggle.toggleName + "Toggle", animatorController.parameters);
+                if (existParam == false)
+                {
+                    animatorController.AddParameter(toggle.toggleName + "Toggle", AnimatorControllerParameterType.Bool);
+                }
+                
+                //Creating On and Off
+
+                BlendTree Blendtree = new BlendTree();
+                Blendtree.name = "BlendTreeToggle";
+
+                AssetDatabase.AddObjectToAsset(Blendtree, animatorController);
+                Blendtree.hideFlags = HideFlags.HideInHierarchy;
+                Blendtree.blendType = BlendTreeType.Simple1D;
+                Blendtree.blendParameter = toggle.toggleName + "Toggle";
+                
+                MainBlendtree.AddChild(Blendtree);
+
+                Blendtree.AddChild((Motion)AssetDatabase.LoadAssetAtPath(saveDir + "ToggleAnimations" + $"/Off{toggle.toggleName}.anim", typeof(Motion)));
+                Blendtree.AddChild((Motion)AssetDatabase.LoadAssetAtPath(saveDir + "ToggleAnimations" + $"/On{toggle.toggleName}.anim", typeof(Motion)));
+                
+
+                //Set Layer Weight
+                AnimatorControllerLayer[] layers = animatorController.layers;
+                layers[animatorController.layers.Length - 1].defaultWeight = 1;
+                animatorController.layers = layers;
+            }
+
+            for (int i = 0; i < MainBlendtree.children.Length; i++)
+            {
+                MainBlendtree.children[i].directBlendParameter = "Weight";
+            }
+            
+            Debug.Log(MainBlendtree.blendParameter);
+            Debug.Log(MainBlendtree.blendParameterY);
+            MainBlendtree.children[0].directBlendParameter = "Weight";
+            MainBlendtree.children[1].directBlendParameter = "Weight";
+            Debug.Log(MainBlendtree.children[0].directBlendParameter);
+            Debug.Log(MainBlendtree.children[1].directBlendParameter);
+            
+            AssetDatabase.SaveAssets();
+        }
+        
         private void MakeVRCParameter()
         {
             List<VRCExpressionParameters.Parameter> newList = new List<VRCExpressionParameters.Parameter>();
