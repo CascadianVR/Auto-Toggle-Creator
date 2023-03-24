@@ -32,6 +32,8 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             GUILayout.Label("Toggle Setup", togglelabel);
             
             GUIStyle toggleGroupButtonStyle = new GUIStyle("button");
+            
+            GUILayout.FlexibleSpace();
 
             if (AutoToggleCreator.CombineToggles) {
                 toggleGroupButtonStyle.normal.background = green;
@@ -42,11 +44,31 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                 toggleGroupButtonStyle.active.background = darkred;
             }
             
-            if (GUILayout.Button("Combine All (Use Int)", toggleGroupButtonStyle, GUILayout.Width(150.0f)))
+            if (GUILayout.Button("Combine All", toggleGroupButtonStyle, GUILayout.Width(80.0f)))
             {
                 AutoToggleCreator.CombineToggles = !AutoToggleCreator.CombineToggles;
             }
             
+            GUIStyle nameStyle = new GUIStyle("textfield")
+            {
+                fontSize = 14,
+                normal =
+                {
+                    textColor = Color.white
+                },
+                alignment = TextAnchor.MiddleCenter
+            };
+            
+            EditorGUI.BeginDisabledGroup(!AutoToggleCreator.CombineToggles);
+            AutoToggleCreator.CombineName = GUILayout.TextField(
+                AutoToggleCreator.CombineName,
+                nameStyle, 
+                GUILayout.ExpandWidth(true), 
+                GUILayout.MinWidth(120), 
+                GUILayout.ExpandWidth(false)
+            );
+            EditorGUI.EndDisabledGroup();
+
 
             if (GUILayout.Button(minusIcon, GUILayout.Width(25), GUILayout.Height(25)))
             {
@@ -65,15 +87,6 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.ExpandHeight(true));
             for (int i = 0; i < AutoToggleCreator.Toggles.Count; i++)
             {
-                GUIStyle nameStyle = new GUIStyle("textfield")
-                {
-                    fontSize = 14,
-                    normal =
-                    {
-                        textColor = Color.white
-                    },
-                    alignment = TextAnchor.MiddleCenter
-                };
                 GUIStyle style = new GUIStyle("window")
                 {
                     fontStyle = FontStyle.Bold, 

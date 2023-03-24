@@ -21,6 +21,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
         public static AnimatorController controller;
         public static VRCExpressionParameters vrcParam;
         public static bool CombineToggles = false;
+        public static string CombineName = "GroupName";
         
         private Vector2 scrollPos;
         private static GameObject selectedAvatar = null;
@@ -264,21 +265,21 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             if (CombineToggles)
             {
                 // Check if the parameter or layer already exists. If not, add parameter
-                bool existParam = doesNameExistParam("GroupToggle", controller.parameters);
+                bool existParam = doesNameExistParam(CombineName + "Toggle", controller.parameters);
                 if (existParam == false)
                 {
-                    controller.AddParameter("GroupToggle", AnimatorControllerParameterType.Int);
+                    controller.AddParameter(CombineName + "Toggle", AnimatorControllerParameterType.Int);
                 }
 
                 //Check if a layer already Exists with that name. If so, remove and add new one.
                 int index;
-                bool existLayer = doesNameExistLayer("GroupToggle", controller.layers, out index);
+                bool existLayer = doesNameExistLayer(CombineName + "Toggle", controller.layers, out index);
                 if (existLayer)
                 {
                     controller.RemoveLayer(index);
                 }
 
-                controller.AddLayer("GroupToggle");
+                controller.AddLayer(CombineName + "Toggle");
 
                 //Creating Idle, On, and Off states
                 AnimatorController animatorController = controller;
@@ -286,7 +287,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
 
                 sm.AddState("stateIdle", new Vector3(300, 0, 0));
 
-                sm.states[0].state.name = "IDLEGroupToggle";
+                sm.states[0].state.name = "IDLE" + CombineName + "Toggle";
                 sm.states[0].state.motion = (Motion)AssetDatabase.LoadAssetAtPath("Assets/CasTools/VRC-Auto-Toggle-Creator/IDLE.anim", typeof(Motion));
                 sm.states[0].state.writeDefaultValues = false;
 
@@ -306,11 +307,11 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                     sm.states[i+1].state.writeDefaultValues = false;
 
                     sm.states[0].state.AddTransition(sm.states[i].state);
-                    sm.states[0].state.transitions[j].AddCondition(AnimatorConditionMode.Equals, j+1, "GroupToggle");
+                    sm.states[0].state.transitions[j].AddCondition(AnimatorConditionMode.Equals, j+1, CombineName + "Toggle");
                     sm.states[0].state.transitions[j].hasExitTime = false;
                     sm.states[0].state.transitions[j].duration = 0.01f;
                     sm.states[i].state.AddTransition(sm.states[i+1].state);
-                    sm.states[i].state.transitions[0].AddCondition(AnimatorConditionMode.NotEqual, j+1, "GroupToggle");
+                    sm.states[i].state.transitions[0].AddCondition(AnimatorConditionMode.NotEqual, j+1, CombineName + "Toggle");
                     sm.states[i].state.transitions[0].hasExitTime = false;
                     sm.states[i].state.transitions[0].duration = 0.01f;
                     sm.states[i+1].state.AddTransition(sm.states[0].state);
