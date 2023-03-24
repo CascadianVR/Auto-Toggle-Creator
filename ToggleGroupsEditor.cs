@@ -30,6 +30,23 @@ namespace CasTools.VRC_Auto_Toggle_Creator
 
             EditorGUILayout.BeginHorizontal();
             GUILayout.Label("Toggle Setup", togglelabel);
+            
+            GUIStyle toggleGroupButtonStyle = new GUIStyle("button");
+
+            if (AutoToggleCreator.CombineToggles) {
+                toggleGroupButtonStyle.normal.background = green;
+                toggleGroupButtonStyle.active.background = darkgreen;
+            }
+            else {
+                toggleGroupButtonStyle.normal.background = red;
+                toggleGroupButtonStyle.active.background = darkred;
+            }
+            
+            if (GUILayout.Button("Combine All (Use Int)", toggleGroupButtonStyle, GUILayout.Width(150.0f)))
+            {
+                AutoToggleCreator.CombineToggles = !AutoToggleCreator.CombineToggles;
+            }
+            
 
             if (GUILayout.Button(minusIcon, GUILayout.Width(25), GUILayout.Height(25)))
             {
@@ -91,19 +108,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                 
                 GUILayout.FlexibleSpace();
                 
-                GUIStyle toggleGroupButtonStyle = new GUIStyle("button");
-                if (AutoToggleCreator.Toggles[i].groupObject) {
-                    toggleGroupButtonStyle.normal.background = green;
-                    toggleGroupButtonStyle.active.background = darkgreen;
-                }
-                else {
-                    toggleGroupButtonStyle.normal.background = red;
-                    toggleGroupButtonStyle.active.background = darkred;
-                }
-                // if (GUILayout.Button("Combine to Group", toggleGroupButtonStyle))
-                // {
-                //     AutoToggleCreator.Toggles[i].groupObject = !AutoToggleCreator.Toggles[i].groupObject;
-                // }
+
                 GUILayout.Space(8);
 
                 GUILayout.EndHorizontal();
