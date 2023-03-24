@@ -34,7 +34,8 @@ namespace CasTools.VRC_Auto_Toggle_Creator
 
             public int toggleObjectCount;
             public List<GameObject> toggleObject;
-            public List<bool> invertObject;
+            public List<bool> invertState;
+            public List<bool> persistState;
 
             public int shapekeyNameCount;
             public List<SkinnedMeshRenderer> shapekeyMesh;
@@ -49,7 +50,8 @@ namespace CasTools.VRC_Auto_Toggle_Creator
 
                 toggleObject = new List<GameObject>();
                 toggleObjectCount = 0;
-                invertObject = new List<bool>();
+                invertState = new List<bool>();
+                persistState = new List<bool>();
 
                 shapekeyName = new List<string>();
                 shapekeyMesh = new List<SkinnedMeshRenderer>();
@@ -205,21 +207,19 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                     bool isActive = toggle.toggleObject[i].activeSelf;
 
                     float toggleObjValue = !isActive ? 1f : 0f;
-                    if (toggle.invertObject[i]) toggleObjValue = 1f - toggleObjValue;
+                    if (toggle.invertState[i]) toggleObjValue = 1f - toggleObjValue;
 
                     toggleClipOn.SetCurve(
                         GetGameObjectPath(toggle.toggleObject[i].transform).Substring(GetGameObjectPath(myAnimator.transform).Length + 1),
                         typeof(GameObject),
                         "m_IsActive",
-                        new AnimationCurve(new Keyframe(0, toggleObjValue, 0, 0),
-                            new Keyframe(0.016666668f, toggleObjValue, 0, 0))
+                        new AnimationCurve(new Keyframe(0.016666668f, toggleObjValue, 0, 0))
                     );
                     toggleClipOff.SetCurve(
                         GetGameObjectPath(toggle.toggleObject[i].transform).Substring(GetGameObjectPath(myAnimator.transform).Length + 1),
                         typeof(GameObject),
                         "m_IsActive",
-                        new AnimationCurve(new Keyframe(0, 1f - toggleObjValue, 0, 0),
-                            new Keyframe(0.016666668f, 1f - toggleObjValue, 0, 0))
+                        new AnimationCurve(new Keyframe(0.016666668f, toggle.persistState[i]? toggleObjValue : 1f - toggleObjValue, 0, 0))
                     );
                 }
 
@@ -227,20 +227,18 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                 {
                     float toggleShapeValue = toggle.shapekeyMesh[i].GetBlendShapeWeight(toggle.shapekeyMesh[i].sharedMesh.GetBlendShapeIndex(toggle.shapekeyName[i]));
                     toggleShapeValue = 100f - toggleShapeValue;
-                    
+
                     toggleClipOn.SetCurve(
                         GetGameObjectPath(toggle.shapekeyMesh[i].transform).Substring(GetGameObjectPath(myAnimator.transform).Length + 1),
                         typeof(SkinnedMeshRenderer),
                         "blendShape." + toggle.shapekeyName[i],
-                        new AnimationCurve(new Keyframe(0, toggleShapeValue, 0, 0),
-                            new Keyframe(0.016666668f, toggleShapeValue, 0, 0))
+                        new AnimationCurve(new Keyframe(0, toggleShapeValue, 0, 0))
                     );
                     toggleClipOff.SetCurve(
                         GetGameObjectPath(toggle.shapekeyMesh[i].transform).Substring(GetGameObjectPath(myAnimator.transform).Length + 1),
                         typeof(SkinnedMeshRenderer),
                         "blendShape." + toggle.shapekeyName[i],
-                        new AnimationCurve(new Keyframe(0, 100f - toggleShapeValue, 0, 0),
-                            new Keyframe(0.016666668f, 100f - toggleShapeValue, 0, 0))
+                        new AnimationCurve(new Keyframe(0.016666668f, toggle.persistState[i]? toggleShapeValue : 100.0f - toggleShapeValue, 0, 0))
                     );
                 }
 

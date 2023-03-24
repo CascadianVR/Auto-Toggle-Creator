@@ -115,7 +115,8 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                 GameObjectList(
                     ref AutoToggleCreator.Toggles[i].toggleObjectCount, 
                     ref AutoToggleCreator.Toggles[i].toggleObject, 
-                    ref AutoToggleCreator.Toggles[i].invertObject
+                    ref AutoToggleCreator.Toggles[i].invertState,
+                    ref AutoToggleCreator.Toggles[i].persistState
                 );
                 ShapekeyList(
                     ref AutoToggleCreator.Toggles[i].shapekeyNameCount, 
@@ -130,7 +131,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             EditorGUILayout.EndScrollView();
         }
 
-        static void GameObjectList(ref int count, ref List<GameObject> objects, ref List<bool> invert)
+        static void GameObjectList(ref int count, ref List<GameObject> objects, ref List<bool> invert, ref List<bool> persist)
         {
             GUIStyle layout = new GUIStyle("window") { margin = new RectOffset(10, 10, 10, 10) };
             GUILayout.BeginVertical(GUIContent.none, layout, GUILayout.ExpandHeight(true));
@@ -143,6 +144,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                 count--;
                 objects.RemoveAt(objects.Count - 1);
                 invert.RemoveAt(invert.Count - 1);
+                persist.RemoveAt(persist.Count - 1);
             }
 
             if (GUILayout.Button(plusIcon, GUILayout.Width(20), GUILayout.Height(20)))
@@ -150,6 +152,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                 count++;
                 objects.Add(null);
                 invert.Add(false);
+                persist.Add(false);
             }
 
             GUILayout.Label("GameObjects");
@@ -167,10 +170,19 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                 );
                 
                 invert[i] = EditorGUILayout.ToggleLeft(
-                    new GUIContent("Invert","Use current state as \"Active\" state."),
+                    new GUIContent("Invert","Use opposite of current state for ON (OFF will be opposite)."),
                     invert[i],
+                    EditorStyles.boldLabel, 
+                    GUILayout.Width(60)
+                );
+                
+                persist[i] = EditorGUILayout.ToggleLeft(
+                    new GUIContent("Persist","Both ON and OFF will have the same value, not opposite."),
+                    persist[i],
                     EditorStyles.boldLabel
                 );
+                
+                GUILayout.FlexibleSpace();
                 GUILayout.EndHorizontal();
             }
 
