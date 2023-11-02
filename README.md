@@ -7,7 +7,7 @@ https://github.com/CascadianWorks/VRC-Auto-Toggle-Creator/releases
 
 # How to Use
 1. Download the Unitypackage from the releases page (link above) from the download page linked above and import it to your Unity project.
-2. Open the menu from the top menu bar under Tools/Cascadian/AutoToggleCreator
+2. Open the menu from the top menu bar under Cascadian/AutoToggleCreator
 6. You can click the plus icon to add a toggle and assign any values/object you'd like to. You can add as many toggles as you'd like.
 7. When done, you can click the "Create Toggles!" button and it will create the animation, layers, parameters and expression items needed.
 8. Upload to VRChat and you should have a seperate toggle for each game object you assigned!
