@@ -14,7 +14,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
     {
         private readonly DebugMenu debugMenu = new DebugMenu();
 
-        public static List<ToggleType> Toggles = new List<ToggleType>();
+        public static List<AvatarToggle> Toggles = new List<AvatarToggle>();
         public static Animator myAnimator;
         public static VRCExpressionsMenu vrcMenu;
         public string saveDir;
@@ -27,38 +27,23 @@ namespace CasTools.VRC_Auto_Toggle_Creator
         private static GameObject selectedAvatar = null;
         
         // Defines properties of each toggle. Each are added to a list where the user changes the properties before thye're applied.
-        public class ToggleType
+        public class AvatarToggle
         {
-            public string toggleName;
             public VRCExpressionsMenu expressionMenu;
             public int vrcMenuIndex;
-
-            public int toggleObjectCount;
-            public List<GameObject> toggleObject;
-            public List<bool> invertState;
-            public List<bool> persistState;
-
-            public int shapekeyNameCount;
-            public List<SkinnedMeshRenderer> shapekeyMesh;
-            public List<int> shapekeyIndex;
-            public List<string> shapekeyName;
             
-            public ToggleType() // Assign default values for when created.
-            {
-                toggleName = "Toggle Name";
-                expressionMenu = vrcMenu;
-                vrcMenuIndex = 0;
-
-                toggleObject = new List<GameObject>();
-                toggleObjectCount = 0;
-                invertState = new List<bool>();
-                persistState = new List<bool>();
-
-                shapekeyName = new List<string>();
-                shapekeyMesh = new List<SkinnedMeshRenderer>();
-                shapekeyIndex = new List<int>();
-                shapekeyNameCount = 0;
-            }
+            public string toggleName = "Toggle";
+            public int toggleObjectCount = 0;
+            public List<GameObject> toggleObject = new List<GameObject>();
+            public List<bool> objectOffStates = new List<bool>();
+            public List<bool> objectOnStates = new List<bool>();
+            
+            public int toggleShapekeyCount = 0;
+            public List<SkinnedMeshRenderer> shapekeyMesh = new List<SkinnedMeshRenderer>();
+            public List<int> shapekeyIndex = new List<int>();
+            public List<string> shapekeyName = new List<string>();
+            public List<float> shapekeyOffStates = new List<float>();
+            public List<float> shapekeyOnStates = new List<float>();
         }
 
         private void OnValidate()
@@ -76,7 +61,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             window.minSize = new Vector2(450, 650);
             
             // Make sure no data is brought over when a new window is created
-            Toggles = new List<ToggleType>();
+            Toggles = new List<AvatarToggle>();
             myAnimator = null;
             controller = null;
             vrcParam = null;
@@ -105,7 +90,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             HorizontalLine(Color.white, 10f);
             EditorGUI.EndDisabledGroup();
 
-            scrollPos = EditorGUILayout.BeginScrollView(scrollPos ,  GUILayout.ExpandHeight(true), GUILayout.MinHeight(80));
+            scrollPos = EditorGUILayout.BeginScrollView(scrollPos ,  GUILayout.ExpandHeight(true));
             
             // Checks for any errors the user must address and displays them before continuing with toggle creation.
             bool errorPass = false;
@@ -205,41 +190,39 @@ namespace CasTools.VRC_Auto_Toggle_Creator
 
                 for (int i = 0; i < toggle.toggleObject.Count; i++)
                 {
-                    bool isActive = toggle.toggleObject[i].activeSelf;
-
-                    float toggleObjValue = !isActive ? 1f : 0f;
-                    if (toggle.invertState[i]) toggleObjValue = 1f - toggleObjValue;
-
+                    float firstValue = toggle.objectOnStates[i] ? 1 : 0;
+                    float secondValue = toggle.objectOffStates[i] ? 1 : 0;
+                    
                     toggleClipOn.SetCurve(
                         GetGameObjectPath(toggle.toggleObject[i].transform).Substring(GetGameObjectPath(myAnimator.transform).Length + 1),
                         typeof(GameObject),
                         "m_IsActive",
-                        new AnimationCurve(new Keyframe(0.016666668f, toggleObjValue, 0, 0))
+                        new AnimationCurve(new Keyframe(0.016666668f, firstValue, 0, 0))
                     );
                     toggleClipOff.SetCurve(
                         GetGameObjectPath(toggle.toggleObject[i].transform).Substring(GetGameObjectPath(myAnimator.transform).Length + 1),
                         typeof(GameObject),
                         "m_IsActive",
-                        new AnimationCurve(new Keyframe(0.016666668f, toggle.persistState[i]? toggleObjValue : 1f - toggleObjValue, 0, 0))
+                        new AnimationCurve(new Keyframe(0.016666668f, secondValue, 0, 0))
                     );
                 }
 
                 for (int i = 0; i < toggle.shapekeyName.Count; i++) // For each shapekey add 
                 {
-                    float toggleShapeValue = toggle.shapekeyMesh[i].GetBlendShapeWeight(toggle.shapekeyMesh[i].sharedMesh.GetBlendShapeIndex(toggle.shapekeyName[i]));
-                    toggleShapeValue = 100f - toggleShapeValue;
+                    float firstValue = toggle.shapekeyOnStates[i];
+                    float secondValue = toggle.shapekeyOffStates[i];
 
                     toggleClipOn.SetCurve(
                         GetGameObjectPath(toggle.shapekeyMesh[i].transform).Substring(GetGameObjectPath(myAnimator.transform).Length + 1),
                         typeof(SkinnedMeshRenderer),
                         "blendShape." + toggle.shapekeyName[i],
-                        new AnimationCurve(new Keyframe(0, toggleShapeValue, 0, 0))
+                        new AnimationCurve(new Keyframe(0, firstValue, 0, 0))
                     );
                     toggleClipOff.SetCurve(
                         GetGameObjectPath(toggle.shapekeyMesh[i].transform).Substring(GetGameObjectPath(myAnimator.transform).Length + 1),
                         typeof(SkinnedMeshRenderer),
                         "blendShape." + toggle.shapekeyName[i],
-                        new AnimationCurve(new Keyframe(0.016666668f, toggle.persistState[i]? toggleShapeValue : 100.0f - toggleShapeValue, 0, 0))
+                        new AnimationCurve(new Keyframe(0.016666668f, secondValue, 0, 0))
                     );
                 }
 
@@ -318,7 +301,6 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                     sm.states[i+1].state.transitions[0].hasExitTime = true;
                     sm.states[i+1].state.transitions[0].exitTime = 0f;
                     sm.states[i+1].state.transitions[0].duration = 0.01f;
-                    Debug.Log(sm.states.Length);
 
                     i += 2;
                 }
@@ -600,8 +582,8 @@ namespace CasTools.VRC_Auto_Toggle_Creator
 
             if (plusIcon == null || minusIcon == null)
             {
-                plusIcon = (Texture2D)AssetDatabase.LoadAssetAtPath("Assets/CasTools/VRC-Auto-Toggle-Creator/plus.png", typeof(Texture2D));
-                minusIcon = (Texture2D)AssetDatabase.LoadAssetAtPath("Assets/CasTools/VRC-Auto-Toggle-Creator/minus.png", typeof(Texture2D));
+                plusIcon = (Texture2D)AssetDatabase.LoadAssetAtPath("Assets/CasTools/Auto-Toggle-Creator/plus.png", typeof(Texture2D));
+                minusIcon = (Texture2D)AssetDatabase.LoadAssetAtPath("Assets/CasTools/Auto-Toggle-Creator/minus.png", typeof(Texture2D));
             }
         }
 

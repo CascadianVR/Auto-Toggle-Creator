@@ -79,7 +79,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
 
             if (GUILayout.Button(plusIcon, GUILayout.Width(25), GUILayout.Height(25)))
             {
-                AutoToggleCreator.Toggles.Add(new AutoToggleCreator.ToggleType());
+                AutoToggleCreator.Toggles.Add(new AutoToggleCreator.AvatarToggle());
             }
 
             EditorGUILayout.EndHorizontal();
@@ -118,33 +118,47 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                 AutoToggleCreator.Toggles[i].vrcMenuIndex = EditorGUILayout.Popup(AutoToggleCreator.Toggles[i].vrcMenuIndex , names.ToArray());
                 AutoToggleCreator.Toggles[i].expressionMenu = menus[AutoToggleCreator.Toggles[i].vrcMenuIndex];
                 EditorGUIUtility.labelWidth = 0;
+
+                if (names.Count <= 0)
+                {
+                    GUILayout.Label("No available menus! They are likely all full.");
+                }
                 
                 GUILayout.FlexibleSpace();
                 
-
+                if (GUILayout.Button("X", GUILayout.Width(20), GUILayout.Height(20)))
+                {
+                    AutoToggleCreator.Toggles.RemoveAt(i);
+                    GUIUtility.ExitGUI();
+                    return;
+                }
+                
                 GUILayout.Space(8);
 
                 GUILayout.EndHorizontal();
                 GameObjectList(
-                    ref AutoToggleCreator.Toggles[i].toggleObjectCount, 
-                    ref AutoToggleCreator.Toggles[i].toggleObject, 
-                    ref AutoToggleCreator.Toggles[i].invertState,
-                    ref AutoToggleCreator.Toggles[i].persistState
+                    ref AutoToggleCreator.Toggles[i].toggleObjectCount,
+                    ref AutoToggleCreator.Toggles[i].toggleObject,
+                    ref AutoToggleCreator.Toggles[i].objectOffStates,
+                    ref AutoToggleCreator.Toggles[i].objectOnStates
                 );
                 ShapekeyList(
-                    ref AutoToggleCreator.Toggles[i].shapekeyNameCount, 
-                    ref AutoToggleCreator.Toggles[i].shapekeyMesh, 
-                    ref AutoToggleCreator.Toggles[i].shapekeyIndex, 
-                    ref AutoToggleCreator.Toggles[i].shapekeyName);
-                GUILayout.FlexibleSpace();
+                    ref AutoToggleCreator.Toggles[i].toggleShapekeyCount,
+                    ref AutoToggleCreator.Toggles[i].shapekeyMesh,
+                    ref AutoToggleCreator.Toggles[i].shapekeyIndex,
+                    ref AutoToggleCreator.Toggles[i].shapekeyName,
+                    ref AutoToggleCreator.Toggles[i].shapekeyOffStates,
+                    ref AutoToggleCreator.Toggles[i].shapekeyOnStates
+                );
+                //GUILayout.FlexibleSpace();
                 GUILayout.EndVertical();
-                GUILayout.FlexibleSpace();
+                //GUILayout.FlexibleSpace();
             }
             GUILayout.FlexibleSpace();
             EditorGUILayout.EndScrollView();
         }
 
-        static void GameObjectList(ref int count, ref List<GameObject> objects, ref List<bool> invert, ref List<bool> persist)
+        static void GameObjectList(ref int count, ref List<GameObject> objects, ref List<bool> onStates, ref List<bool> offStates)
         {
             GUIStyle layout = new GUIStyle("window") { margin = new RectOffset(10, 10, 10, 10) };
             GUILayout.BeginVertical(GUIContent.none, layout, GUILayout.ExpandHeight(true));
@@ -156,16 +170,16 @@ namespace CasTools.VRC_Auto_Toggle_Creator
 
                 count--;
                 objects.RemoveAt(objects.Count - 1);
-                invert.RemoveAt(invert.Count - 1);
-                persist.RemoveAt(persist.Count - 1);
+                offStates.RemoveAt(offStates.Count - 1);
+                onStates.RemoveAt(onStates.Count - 1);
             }
 
             if (GUILayout.Button(plusIcon, GUILayout.Width(20), GUILayout.Height(20)))
             {
                 count++;
                 objects.Add(null);
-                invert.Add(false);
-                persist.Add(false);
+                offStates.Add(false);
+                onStates.Add(true);
             }
 
             GUILayout.Label("GameObjects");
@@ -182,27 +196,27 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                     GUILayout.Width(150f)
                 );
                 
-                invert[i] = EditorGUILayout.ToggleLeft(
-                    new GUIContent("Invert","Use opposite of current state for ON (OFF will be opposite)."),
-                    invert[i],
-                    EditorStyles.boldLabel, 
-                    GUILayout.Width(60)
-                );
                 
-                persist[i] = EditorGUILayout.ToggleLeft(
-                    new GUIContent("Persist","Both ON and OFF will have the same value, not opposite."),
-                    persist[i],
-                    EditorStyles.boldLabel
-                );
+                GUILayout.Space(10);
+                
+                GUILayout.Label("Off State:");
+                offStates[i] = GUILayout.Toggle(offStates[i], "");
+                
+                GUILayout.Space(10);
+                
+                GUILayout.Label("On State:");
+                onStates[i] = GUILayout.Toggle(onStates[i], "");
                 
                 GUILayout.FlexibleSpace();
                 GUILayout.EndHorizontal();
             }
 
             GUILayout.EndVertical();
+            
         }
 
-        static void ShapekeyList(ref int count, ref List<SkinnedMeshRenderer> mesh, ref List<int> index, ref List<string> shapekey)
+        static void ShapekeyList(ref int count, ref List<SkinnedMeshRenderer> mesh, ref List<int> index, ref List<string> shapekey,
+            ref List<float> onStates, ref List<float> offStates)
         {
             GUIStyle layout = new GUIStyle("window") { margin = new RectOffset(10, 10, 10, 10) };
             GUILayout.BeginVertical(GUIContent.none, layout, GUILayout.ExpandHeight(true));
@@ -216,6 +230,8 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                 shapekey.RemoveAt(shapekey.Count - 1);
                 mesh.RemoveAt(mesh.Count - 1);
                 index.RemoveAt(index.Count - 1);
+                offStates.RemoveAt(offStates.Count - 1);
+                onStates.RemoveAt(onStates.Count - 1);
             }
 
             if (GUILayout.Button(plusIcon, GUILayout.Width(20), GUILayout.Height(20)))
@@ -224,6 +240,8 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                 shapekey.Add(null);
                 mesh.Add(null);
                 index.Add(0);
+                offStates.Add(0);
+                onStates.Add(100);
             }
 
             GUILayout.Label("Blendshapes");
@@ -245,11 +263,17 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                     {
                         index[i] = EditorGUILayout.Popup(index[i], GetShapekeys(mesh[i]),GUILayout.Width(80));
                         shapekey[i] = mesh[i].sharedMesh.GetBlendShapeName(index[i]);
+                        GUILayout.Space(5);
+                        
+                        GUILayout.Label("Off State:");
+                        offStates[i] = EditorGUILayout.Slider(offStates[i], 0, 100);
+                
+                        GUILayout.Space(10);
+                
+                        GUILayout.Label("On State:");
+                        onStates[i] = EditorGUILayout.Slider(onStates[i], 0, 100);
+                        
                         GUILayout.FlexibleSpace();
-                        GUILayout.Space(20);
-                        var val = EditorGUILayout.Slider(mesh[i].GetBlendShapeWeight(index[i]), 0, 100);
-                        mesh[i].SetBlendShapeWeight(index[i], val);
-                        GUILayout.Space(20);
                     }
                     else
                     {
@@ -282,7 +306,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
 
             foreach (var menu in menus)
             {
-                names.Add(menu.name);
+                if (menu.controls.Count < 8) names.Add(menu.name);
             }
             
             return menus.ToArray();
@@ -294,6 +318,7 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             {
                 if (currentMenu.controls[i].type == VRCExpressionsMenu.Control.ControlType.SubMenu)
                 {
+                    if (currentMenu.controls[i].subMenu == null) continue;
                     menus.Add(currentMenu.controls[i].subMenu);
                     CheckMenu(currentMenu.controls[i].subMenu, ref menus);
                 }

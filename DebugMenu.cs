@@ -18,6 +18,8 @@ namespace CasTools.VRC_Auto_Toggle_Creator
             
             CheckDescriptorAssignment();
             CheckToggleNames();
+            CheckForNullObjects();
+            CheckForNullShapekeys();
             CheckMenuAssignment();
 
             return Errors == 0;
@@ -61,6 +63,38 @@ namespace CasTools.VRC_Auto_Toggle_Creator
                     EditorGUILayout.HelpBox("Error: Multiple toggle groups share the same name. Please rename to resolve.", MessageType.Error);
                     Errors++;
                     return;
+                }
+            }
+        }
+        
+        private void CheckForNullObjects()
+        {
+            foreach (var toggle in AutoToggleCreator.Toggles)
+            {
+                foreach (var obj in toggle.toggleObject)
+                {
+                    if (obj == null)
+                    {
+                        EditorGUILayout.HelpBox("Error: One or more objects have not been assigned to a toggle. " +
+                                                "Please remove the empty toggle or assign a value to it", MessageType.Error);
+                        return;
+                    }
+                }
+            }
+        }
+        
+        private void CheckForNullShapekeys()
+        {
+            foreach (var toggle in AutoToggleCreator.Toggles)
+            {
+                foreach (var mesh in toggle.shapekeyMesh)
+                {
+                    if (mesh == null)
+                    {
+                        EditorGUILayout.HelpBox("Error: One or more shapkeys do not have a mesh object assigned. " +
+                                                "Please remove the empty shapekey or assign a value to it", MessageType.Error);
+                        return;
+                    }
                 }
             }
         }
